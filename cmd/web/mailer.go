@@ -38,7 +38,7 @@ type Message struct {
 	Template      string
 }
 
-// a function to listen for messages on the MailerChan
+// ## a function to listen for messages on the MailerChan
 func (app *Config) listenForMail() {
 	for {
 		select {
@@ -73,6 +73,10 @@ func (m *Mail) sendMail(msg Message, errorChan chan error) {
 		msg.AttachmentMap = make(map[string]string)
 	}
 
+	// data := map[string]any{
+	// 	"message": msg.Data,
+	// }
+
 	if len(msg.DataMap) == 0 {
 		msg.DataMap = make(map[string]any)
 	}
@@ -82,14 +86,12 @@ func (m *Mail) sendMail(msg Message, errorChan chan error) {
 	// build html mail
 	formattedMsg, err := m.buildHTMLMessage(msg)
 	if err != nil {
-		fmt.Println("buildHTMLMessage-->", err)
 		errorChan <- err
 	}
 
 	// build plain text mail
 	plainMsg, err := m.buildPlainTextMessage(msg)
 	if err != nil {
-		fmt.Println("buildPlainTextMessage-->", err)
 		errorChan <- err
 	}
 
@@ -105,7 +107,6 @@ func (m *Mail) sendMail(msg Message, errorChan chan error) {
 
 	smtpClient, err := server.Connect()
 	if err != nil {
-		fmt.Println("Connect-->", err)
 		errorChan <- err
 	}
 
@@ -129,10 +130,8 @@ func (m *Mail) sendMail(msg Message, errorChan chan error) {
 
 	err = email.Send(smtpClient)
 	if err != nil {
-		fmt.Println("Send-->", err)
 		errorChan <- err
 	}
-
 }
 
 func (m *Mail) buildHTMLMessage(msg Message) (string, error) {
@@ -140,20 +139,17 @@ func (m *Mail) buildHTMLMessage(msg Message) (string, error) {
 
 	t, err := template.New("email-html").ParseFiles(templateToRender)
 	if err != nil {
-		fmt.Println("ParseFiles-->", err)
 		return "", err
 	}
 
 	var tpl bytes.Buffer
 	if err = t.ExecuteTemplate(&tpl, "body", msg.DataMap); err != nil {
-		fmt.Println("ExecuteTemplate-->", err)
 		return "", err
 	}
 
 	formattedMessage := tpl.String()
 	formattedMessage, err = m.inlineCSS(formattedMessage)
 	if err != nil {
-		fmt.Println("inlineCSS-->", err)
 		return "", err
 	}
 
@@ -165,13 +161,11 @@ func (m *Mail) buildPlainTextMessage(msg Message) (string, error) {
 
 	t, err := template.New("email-plain").ParseFiles(templateToRender)
 	if err != nil {
-		fmt.Println("ParseFiles-->", err)
 		return "", err
 	}
 
 	var tpl bytes.Buffer
 	if err = t.ExecuteTemplate(&tpl, "body", msg.DataMap); err != nil {
-		fmt.Println("ExecuteTemplate-->", err)
 		return "", err
 	}
 
@@ -189,13 +183,11 @@ func (m *Mail) inlineCSS(s string) (string, error) {
 
 	prem, err := premailer.NewPremailerFromString(s, &options)
 	if err != nil {
-		fmt.Println("NewPremailerFromString-->", err)
 		return "", err
 	}
 
 	html, err := prem.Transform()
 	if err != nil {
-		fmt.Println("Transform-->", err)
 		return "", err
 	}
 

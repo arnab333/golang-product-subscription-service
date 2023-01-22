@@ -82,7 +82,7 @@ func (app *Config) listenForErrors() {
 
 func (app *Config) serve() {
 	// start http server
-	srv := http.Server{
+	srv := &http.Server{
 		Addr:    fmt.Sprintf(":%s", webPort),
 		Handler: app.routes(),
 	}
@@ -95,6 +95,7 @@ func (app *Config) serve() {
 	}
 }
 
+// initDB connects to Postgres and returns a pool of connections
 func initDB() *sql.DB {
 	conn := connectToDB()
 	if conn == nil {
@@ -103,6 +104,8 @@ func initDB() *sql.DB {
 	return conn
 }
 
+// connectToDB tries to connect to postgres, and backs off until a connection
+// is made, or we have not connected after 10 tries
 func connectToDB() *sql.DB {
 	counts := 0
 	dsn := os.Getenv("DSN")
@@ -126,6 +129,8 @@ func connectToDB() *sql.DB {
 	}
 }
 
+// openDB opens a connection to Postgres, using a DSN read
+// from the environment variable DSN
 func openDB(dsn string) (*sql.DB, error) {
 	db, err := sql.Open("pgx", dsn)
 	if err != nil {
@@ -140,20 +145,23 @@ func openDB(dsn string) (*sql.DB, error) {
 	return db, nil
 }
 
+// initSession sets up a session, using Redis for session store
 func initSession() *scs.SessionManager {
 	gob.Register(data.User{})
 
 	// set up session
-	s := scs.New()
-	s.Store = redisstore.New(initRedis())
-	s.Lifetime = 24 * time.Hour
-	s.Cookie.Persist = true
-	s.Cookie.SameSite = http.SameSiteLaxMode
-	s.Cookie.Secure = true
+	session := scs.New()
+	session.Store = redisstore.New(initRedis())
+	session.Lifetime = 24 * time.Hour
+	session.Cookie.Persist = true
+	session.Cookie.SameSite = http.SameSiteLaxMode
+	session.Cookie.Secure = true
 
-	return s
+	return session
 }
 
+// initRedis returns a pool of connections to Redis using the
+// environment variable REDIS
 func initRedis() *redis.Pool {
 	redisPool := &redis.Pool{
 		MaxIdle: 10,
@@ -186,6 +194,7 @@ func (app *Config) shutdown() {
 	close(app.Mailer.MailerChan)
 	close(app.Mailer.ErrorChan)
 	close(app.Mailer.DoneChan)
+	close(app.ErrorChan)
 	close(app.ErrorChanDone)
 }
 
