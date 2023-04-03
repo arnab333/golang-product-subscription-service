@@ -15,7 +15,7 @@ Silver. This project has been built to showcase various concurrency instances.
   - To stop the server run `make stop`
   - To see mailhog emails, open `http://localhost:8025/` in the browser
 
-  ## Use cases of concurrencies
+## Use cases of concurrencies
 
   - Sending email
   - Graceful shutdown
